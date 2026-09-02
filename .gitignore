@@ -1,8 +1,9 @@
-.vscode/*
-!.vscode/extensions.json
-node_modules/
-backend/app/frontend/
+__pycache__/
+*.pyc
+.venv/
+backend/coverage/
+backend/htmlcov/
+backend/app.db
+*.sqlite3
 /test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
+.env
