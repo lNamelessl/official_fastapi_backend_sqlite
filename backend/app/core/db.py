@@ -4,7 +4,13 @@ from app import crud
 from app.core.config import settings
 from app.models import User, UserCreate
 
-engine = create_engine(str(settings.DATABASE_URL), pool_pre_ping=True)
+# SQLite connections must be allowed to cross threads: FastAPI serves requests
+# from worker threads, and the TestClient runs the app in a separate thread.
+engine_kwargs: dict = {"pool_pre_ping": True}
+if str(settings.DATABASE_URL).startswith("sqlite"):
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+
+engine = create_engine(str(settings.DATABASE_URL), **engine_kwargs)
 
 
 # make sure all SQLModel models are imported (app.models) before initializing DB

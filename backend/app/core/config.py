@@ -4,12 +4,13 @@ from typing import Literal, Self
 from pydantic import (
     EmailStr,
     HttpUrl,
-    PostgresDsn,
     computed_field,
     field_validator,
     model_validator,
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+DEFAULT_DATABASE_URL = "sqlite:///./app.db"
 
 
 class Settings(BaseSettings):
@@ -28,16 +29,33 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str
     SENTRY_DSN: HttpUrl | None = None
-    DATABASE_URL: PostgresDsn
+
+    # Location of the SQLite database file. Accepts, in order:
+    # - a SQLAlchemy SQLite URL (sqlite:///./app.db or sqlite:////data/app.db)
+    # - a bare file path, absolute or relative (e.g. /data/app.db on a mounted
+    #   volume, as commonly injected by platforms like Railway)
+    # Remote database URLs (postgres, mysql, ...) are rejected: this template
+    # is SQLite-only.
+    DATABASE_URL: str = DEFAULT_DATABASE_URL
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
-    def _use_psycopg_driver(cls, value: str | PostgresDsn) -> str:
-        database_url = str(value)
-        for scheme in ("postgres://", "postgresql://"):
-            if database_url.startswith(scheme):
-                return database_url.replace(scheme, "postgresql+psycopg://", 1)
-        return database_url
+    def _normalize_sqlite_url(cls, value: object) -> str:
+        database_url = str(value or "").strip()
+        if database_url.startswith("sqlite"):
+            return database_url
+        if "://" in database_url:
+            scheme = database_url.split("://", 1)[0]
+            raise ValueError(
+                f"This template is SQLite-only: DATABASE_URL must be a SQLite "
+                f"URL or a file path, got a '{scheme}://' URL."
+            )
+        if not database_url:
+            return DEFAULT_DATABASE_URL
+        # sqlite:/// + "/data/app.db" yields the 4-slash absolute form
+        # (sqlite:////data/app.db); sqlite:/// + "app.db" yields the
+        # 3-slash relative form (sqlite:///app.db).
+        return f"sqlite:///{database_url}"
 
     SMTP_TLS: bool = True
     SMTP_SSL: bool = False
@@ -79,8 +97,6 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _enforce_non_default_secrets(self) -> Self:
         self._check_default_secret("SECRET_KEY", self.SECRET_KEY)
-        for host in self.DATABASE_URL.hosts():
-            self._check_default_secret("DATABASE_URL password", host["password"])
         self._check_default_secret(
             "FIRST_SUPERUSER_PASSWORD", self.FIRST_SUPERUSER_PASSWORD
         )

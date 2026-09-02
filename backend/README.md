@@ -2,20 +2,14 @@
 
 ## Requirements
 
-* [Docker](https://www.docker.com/).
+* [Docker](https://www.docker.com/), for the Docker Compose workflow.
 * [uv](https://docs.astral.sh/uv/) for Python package and environment management.
 
 ## Local Development
 
-Run the backend locally and connect it to PostgreSQL in Docker Compose.
+The backend uses SQLite, so there is no database server to run.
 
-From the project root, start PostgreSQL and Mailpit:
-
-```console
-$ docker compose up -d db mailpit
-```
-
-Then, from `./backend/`, install the dependencies, prepare the database, and start the development server:
+From `./backend/`, install the dependencies, prepare the database, and start the development server:
 
 ```console
 $ uv sync
@@ -24,6 +18,8 @@ $ uv run fastapi dev
 ```
 
 The API is available at `http://localhost:8000`, with automatic interactive docs at `http://localhost:8000/docs`.
+
+The SQLite database file is created at `backend/app.db` by default, configured by `DATABASE_URL` in the root `.env` file.
 
 ## General Workflow
 
@@ -39,18 +35,13 @@ The setup is also already configured so you can run the tests through the VS Cod
 
 ## Full Stack with Docker Compose
 
-To run the backend and built frontend in Docker Compose:
+To run the backend in Docker Compose with the SQLite file persisted in a volume:
 
 ```console
-$ docker compose run --rm backend bash scripts/prestart.sh
-$ docker compose watch
+$ docker compose up -d --build --wait
 ```
 
-The application is available at `http://localhost:8000`.
-
-### Docker Compose Override
-
-The `compose.override.yml` file contains local settings for published ports, source synchronization, automatic image rebuilds, and backend reloads. Docker Compose applies it automatically when you run `docker compose` without an explicit file list.
+The application is available at `http://localhost:8000`, and the database is stored in the `app-db-data` volume mounted at `/data`.
 
 To open a shell in the backend container:
 
@@ -66,7 +57,7 @@ To test the backend from the `backend` directory, run:
 $ uv run bash scripts/test.sh
 ```
 
-The tests run with Pytest. Modify existing tests or add new ones in `./backend/tests/`.
+The tests run with Pytest against a temporary SQLite database. Modify existing tests or add new ones in `./backend/tests/`.
 
 If you use GitHub Actions, the tests will run automatically.
 
@@ -92,7 +83,7 @@ When the tests run, they generate `htmlcov/index.html`. Open it in your browser 
 
 ## Migrations
 
-Make sure you create a revision of your models and upgrade the database with that revision every time you change them. From the `backend` directory, use `uv` to run Alembic against the PostgreSQL container:
+Make sure you create a revision of your models and upgrade the database with that revision every time you change them. From the `backend` directory, use `uv` to run Alembic against the SQLite file:
 
 * Alembic is already configured to import your SQLModel models from `./backend/app/models.py`.
 
@@ -122,24 +113,8 @@ and comment the line in the file `scripts/prestart.sh` that contains:
 $ alembic upgrade head
 ```
 
-If you don't want to start with the default models and want to remove them / modify them, from the beginning, without having any previous revision, you can remove the revision files (`.py` Python files) under `./backend/app/alembic/versions/`. And then create a first migration as described above.
-
 ## Email Templates
 
-The email templates are written with [React Email](https://react.email) in `./packages/react-email/`. The `emails` directory holds one component per email and the `ui` directory holds the shared components (layout, heading, button, link, callout).
+The pre-rendered email templates live in `./backend/app/email-templates/` and are sent with Jinja values filled in by `generate_*_email()` in `./backend/app/utils.py`.
 
-The rendered HTML in `./backend/app/email-templates/` is generated from those components. It is what the application sends and should not be edited by hand.
-
-To preview the emails while editing them, start the dev server from the root of the project:
-
-```console
-$ bun run email:dev
-```
-
-Values coming from the backend are declared as Jinja placeholders in the component props, for example `username = "{{ username }}"`. The context for each email is built in `generate_*_email()` in `./backend/app/utils.py`, so a new placeholder needs to be added there too.
-
-Once you are done, regenerate the templates used by the application:
-
-```console
-$ bun run email:export
-```
+Emails are disabled until you configure an SMTP provider via `SMTP_HOST` and `EMAILS_FROM_EMAIL`.
