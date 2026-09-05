@@ -6,13 +6,13 @@ The repository is a one-click Railway template: a root-level `Dockerfile` provid
 
 ### One-Click Deploy
 
-Click the **Deploy on Railway** button in the [README](./README.md), or open:
+Click the **Deploy on Railway** button in the [README](./README.md), or open <https://railway.com/deploy/official-fastapi-backend-sqlite>.
+
+The deploy form prompts for the five template variables (`PROJECT_NAME`, `SECRET_KEY`, `FIRST_SUPERUSER`, `FIRST_SUPERUSER_PASSWORD`, and `DATABASE_URL` — enter `/data/app.db`). To deploy your own fork instead, open:
 
 ```
-https://railway.app/new?github_url=https://github.com/lNamelessl/official_fastapi_backend_sqlite
+https://railway.app/new?github_url=<your-repo-url>
 ```
-
-Replace the `github_url` with your own fork/repo URL to deploy your copy.
 
 ### Deploy With the Railway CLI
 

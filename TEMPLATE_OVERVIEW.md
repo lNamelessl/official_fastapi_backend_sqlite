@@ -2,7 +2,7 @@
 
 A backend-only version of the [official Full Stack FastAPI Template](https://github.com/tiangolo/full-stack-fastapi-template) by tiangolo, adapted for **SQLite** and packaged for **one-click deployment on Railway** — no frontend, no PostgreSQL server, no external database service.
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.app/new?github_url=https://github.com/lNamelessl/official_fastapi_backend_sqlite)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/official-fastapi-backend-sqlite)
 
 ## What You Get
 
@@ -27,13 +27,14 @@ Deploy the FastAPI + SQLite backend template on Railway with the **Deploy on Rai
 Hosting this template means running a single stateless API container plus one persistent volume:
 
 - **Services provisioned:** one `backend` service (Dockerfile build) and one volume mounted at `/data` for the SQLite database file. No database server, cache, or reverse proxy services are needed.
-- **Environment variables to set on the service:**
-  - `PROJECT_NAME` — shown in the API docs and emails.
+- **Deploy-form variables** (the deploy form prompts for these; no secrets are pre-filled):
+  - `PROJECT_NAME` — shown in the API docs and emails (any value).
   - `SECRET_KEY` — signs JWTs; generate with `openssl rand -hex 32`.
-  - `FIRST_SUPERUSER` — email of the seeded admin.
+  - `FIRST_SUPERUSER` — email of the seeded admin (e.g. `admin@example.com`).
   - `FIRST_SUPERUSER_PASSWORD` — password of the seeded admin; use a strong generated value.
-  - `DATABASE_URL` — already wired to `/data/app.db` on the volume; accepts `sqlite:///...` URLs or bare paths.
-  - `FRONTEND_HOST` *(optional)* — CORS origin to allow, e.g. your generated Railway domain.
+  - `DATABASE_URL` — enter `/data/app.db` to store the SQLite file on the attached volume; accepts `sqlite:///...` URLs or bare paths.
+- **Post-deploy variables (optional, set from the dashboard):**
+  - `FRONTEND_HOST` — CORS origin to allow, e.g. your generated Railway domain.
 - Do **not** set `FASTAPI_ENV` in production — leaving it unset enables strict validation of default secrets at boot.
 
 ## Why Deploy

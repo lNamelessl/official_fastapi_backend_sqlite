@@ -4,7 +4,7 @@ A backend-only version of the [official Full Stack FastAPI Template](https://git
 
 [![Test Backend](../../actions/workflows/test-backend.yml/badge.svg)](../../actions/workflows/test-backend.yml)
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.app/new?github_url=https://github.com/lNamelessl/official_fastapi_backend_sqlite)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/official-fastapi-backend-sqlite)
 
 ## Technology Stack and Features
 
@@ -22,13 +22,15 @@ A backend-only version of the [official Full Stack FastAPI Template](https://git
 
 ## How To Use It
 
-**One-click deploy to Railway**: click the **Deploy on Railway** button above. Railway builds the Docker image, sets a `DATABASE_URL` for SQLite, and starts the app — migrations and the first superuser are created automatically at startup.
+**One-click deploy to Railway**: click the **Deploy on Railway** button above (marketplace URL: <https://railway.com/deploy/official-fastapi-backend-sqlite>). The deploy form prompts for these variables — the volume at `/data` is provisioned automatically:
 
-Or clone the repository and deploy from your own GitHub account with:
+* `PROJECT_NAME` — shown in the API docs and emails (any value).
+* `SECRET_KEY` — generate with `openssl rand -hex 32`.
+* `FIRST_SUPERUSER` — email of the initial admin (e.g. `admin@example.com`).
+* `FIRST_SUPERUSER_PASSWORD` — a strong generated password.
+* `DATABASE_URL` — enter `/data/app.db` to store the SQLite file on the attached volume.
 
-```
-https://railway.app/new?github_url=<your-repo-url>
-```
+Railway builds the Docker image from the repo and starts the app — migrations and the first superuser are created automatically at startup.
 
 ## Deploying to Railway
 
