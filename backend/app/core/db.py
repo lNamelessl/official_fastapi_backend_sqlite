@@ -1,12 +1,8 @@
-import logging
-
 from sqlmodel import Session, create_engine, select
 
 from app import crud
 from app.core.config import settings
 from app.models import User, UserCreate
-
-logger = logging.getLogger(__name__)
 
 # SQLite connections must be allowed to cross threads: FastAPI serves requests
 # from worker threads, and the TestClient runs the app in a separate thread.
@@ -41,11 +37,3 @@ def init_db(session: Session) -> None:
             is_superuser=True,
         )
         user = crud.create_user(session=session, user_create=user_in)
-        if settings._password_generated:
-            logger.warning(
-                "Generated initial admin password for %s: %s "
-                "(also stored in .bootstrap_secrets.json next to the database "
-                "file; sign in and change it, then delete that file)",
-                settings.FIRST_SUPERUSER,
-                settings.FIRST_SUPERUSER_PASSWORD,
-            )

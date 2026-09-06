@@ -8,7 +8,6 @@ from typing import Literal, Self
 from pydantic import (
     EmailStr,
     HttpUrl,
-    PrivateAttr,
     computed_field,
     field_validator,
     model_validator,
@@ -96,8 +95,6 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER: str = ""
     FIRST_SUPERUSER_PASSWORD: str = ""
 
-    _password_generated: bool = PrivateAttr(default=False)
-
     def _sqlite_db_dir(self) -> Path | None:
         """Directory that holds the SQLite database file, if any."""
         rest = self.DATABASE_URL[len("sqlite:") :]
@@ -148,7 +145,7 @@ class Settings(BaseSettings):
             else:
                 self.FIRST_SUPERUSER_PASSWORD = secrets.token_urlsafe(12)
                 generated["first_superuser_password"] = self.FIRST_SUPERUSER_PASSWORD
-                self._password_generated = True
+                generated["password_logged"] = "false"
 
         if generated and secrets_file:
             payload = {**stored, **generated}
@@ -159,6 +156,37 @@ class Settings(BaseSettings):
                 os.chmod(secrets_file, 0o600)
             except OSError:
                 pass
+
+    def log_bootstrap_password_once(self, logger: object) -> None:
+        """Log the generated initial admin password exactly once per
+        deployment, right after the superuser has been seeded. Called from
+        scripts/prestart.sh via app.initial_data, so it works no matter which
+        process first generated the credentials."""
+        db_dir = self._sqlite_db_dir()
+        secrets_file = db_dir / ".bootstrap_secrets.json" if db_dir else None
+        if not secrets_file or not secrets_file.exists():
+            return
+        try:
+            payload = json.loads(secrets_file.read_text())
+            if not isinstance(payload, dict):
+                return
+        except (OSError, ValueError):
+            return
+        if payload.get("password_logged") == "true":
+            return
+        logger.warning(
+            "Generated initial admin password for %s: %s "
+            "(stored in .bootstrap_secrets.json next to the database file; "
+            "sign in and change it, then delete that file)",
+            self.FIRST_SUPERUSER,
+            self.FIRST_SUPERUSER_PASSWORD,
+        )
+        payload["password_logged"] = "true"
+        try:
+            secrets_file.write_text(json.dumps(payload, indent=2))
+            os.chmod(secrets_file, 0o600)
+        except OSError:
+            pass
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
