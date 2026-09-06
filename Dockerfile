@@ -20,6 +20,10 @@ WORKDIR /app/
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#using-the-environment
 ENV PATH="/app/.venv/bin:$PATH"
 
+# Default the SQLite file to the volume mount point used by Railway
+# deployments (the directory is created on boot; override with DATABASE_URL).
+ENV DATABASE_URL=/data/app.db
+
 # Install dependencies. Plain COPY layers instead of BuildKit bind mounts,
 # which Railway's builders reject.
 COPY pyproject.toml uv.lock /app/
