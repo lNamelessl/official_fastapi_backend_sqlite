@@ -22,15 +22,15 @@ A backend-only version of the [official Full Stack FastAPI Template](https://git
 
 ## How To Use It
 
-**One-click deploy to Railway**: click the **Deploy on Railway** button above (marketplace URL: <https://railway.com/deploy/official-fastapi-backend-sqlite>). The deploy form prompts for these variables — the volume at `/data` is provisioned automatically:
+**One-click deploy to Railway**: click the **Deploy on Railway** button above (marketplace URL: <https://railway.com/deploy/official-fastapi-backend-sqlite>). The deploy form prompts for **nothing** — Railway provisions the `backend` service plus a volume at `/data` and starts the app.
 
-* `PROJECT_NAME` — shown in the API docs and emails (any value).
-* `SECRET_KEY` — generate with `openssl rand -hex 32`.
-* `FIRST_SUPERUSER` — email of the initial admin (e.g. `admin@example.com`).
-* `FIRST_SUPERUSER_PASSWORD` — a strong generated password.
-* `DATABASE_URL` — enter `/data/app.db` to store the SQLite file on the attached volume.
+On first boot the app:
 
-Railway builds the Docker image from the repo and starts the app — migrations and the first superuser are created automatically at startup.
+1. Applies Alembic migrations to the SQLite database on the volume.
+2. Generates a `SECRET_KEY` and an initial admin password, and persists both in `.bootstrap_secrets.json` next to the database file (so they survive restarts).
+3. Seeds the superuser `admin@example.com` with the generated password and logs it once — search the deploy logs for "Generated initial admin password" (or read the file from the volume), then sign in and change the password via the API.
+
+Optional overrides you can set later as service variables: `PROJECT_NAME`, `FIRST_SUPERUSER`, `FIRST_SUPERUSER_PASSWORD`, `DATABASE_URL`, `FRONTEND_HOST` (CORS origin), and SMTP settings for emails.
 
 ## Deploying to Railway
 
@@ -39,13 +39,13 @@ The repository ships with a root-level `Dockerfile` and a `railway.json` so Rail
 1. The Docker image installs dependencies with `uv`, applies Alembic migrations, seeds the first superuser (`scripts/prestart.sh`), and starts FastAPI bound to Railway's `PORT` (`${PORT:-8000}` locally).
 2. The `railway.json` deploy step points the healthcheck at the redirect-free `/health` endpoint and restarts on failure.
 
-Environment variables to set on the Railway service:
+All credentials are generated on first boot when not provided, so the deployment needs zero variables. Optional environment variables:
 
-* `PROJECT_NAME` — shown in the API docs and emails.
-* `SECRET_KEY` — generate with `openssl rand -hex 32`.
-* `FIRST_SUPERUSER` — email of the initial admin.
-* `FIRST_SUPERUSER_PASSWORD` — generate a strong one; it is used to seed the superuser on first boot.
-* `DATABASE_URL` *(optional)* — where the SQLite file lives. Accepts a `sqlite:///...` URL or a bare path. To survive redeploys, attach a Railway volume (e.g. mount at `/data`) and set `DATABASE_URL=/data/app.db`. Default: `sqlite:///./app.db` inside the container.
+* `PROJECT_NAME` — shown in the API docs and emails (default: `FastAPI Backend SQLite`).
+* `SECRET_KEY` — JWT signing key; generated and persisted on the volume when unset.
+* `FIRST_SUPERUSER` — email of the initial admin (default: `admin@example.com`).
+* `FIRST_SUPERUSER_PASSWORD` — generated, persisted, and logged once when unset.
+* `DATABASE_URL` *(optional)* — where the SQLite file lives. Accepts a `sqlite:///...` URL or a bare path; the Docker image defaults to `/data/app.db` on the volume.
 * `FRONTEND_HOST` *(optional)* — origin allowed by CORS, e.g. your generated `https://<project>.up.railway.app` domain.
 
 Do **not** set `FASTAPI_ENV` in production — leaving it unset enables strict validation of default secrets.

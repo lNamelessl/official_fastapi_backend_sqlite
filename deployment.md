@@ -8,7 +8,7 @@ The repository is a one-click Railway template: a root-level `Dockerfile` provid
 
 Click the **Deploy on Railway** button in the [README](./README.md), or open <https://railway.com/deploy/official-fastapi-backend-sqlite>.
 
-The deploy form prompts for the five template variables (`PROJECT_NAME`, `SECRET_KEY`, `FIRST_SUPERUSER`, `FIRST_SUPERUSER_PASSWORD`, and `DATABASE_URL` — enter `/data/app.db`). To deploy your own fork instead, open:
+The deploy form prompts for **nothing**: the service and the `/data` volume are provisioned automatically, and the app generates its `SECRET_KEY` and initial admin password on first boot (persisted next to the database and logged once in the deploy logs). To deploy your own fork instead, open:
 
 ```
 https://railway.app/new?github_url=<your-repo-url>
@@ -27,22 +27,15 @@ railway up
 
 ### Environment Variables
 
-Add these required variables to the service (dashboard or `railway variables --set ...`):
+No variables are required: on first boot the app generates a `SECRET_KEY` and an initial admin password (persisted next to the database file and logged once), and seeds the superuser `admin@example.com`.
 
-* `PROJECT_NAME`: The name of the project, used in the API documentation and emails.
-* `SECRET_KEY`: A secret key used to sign security tokens.
-* `FIRST_SUPERUSER`: The email address of the first superuser.
-* `FIRST_SUPERUSER_PASSWORD`: The password of the first superuser.
+Optional overrides you can set on the service (dashboard or `railway variables`):
 
-You can generate secure values for `SECRET_KEY` and `FIRST_SUPERUSER_PASSWORD` with:
-
-```bash
-openssl rand -hex 32
-```
-
-Optional variables:
-
-* `DATABASE_URL`: Where the SQLite database file lives. Accepts a `sqlite:///...` SQLAlchemy URL or a bare file path (`/data/app.db`). Defaults to `sqlite:///./app.db` inside the container.
+* `PROJECT_NAME`: The name of the project, used in the API documentation and emails (default: `FastAPI Backend SQLite`).
+* `SECRET_KEY`: A secret key used to sign security tokens; generated and persisted on the volume when unset.
+* `FIRST_SUPERUSER`: The email address of the first superuser (default: `admin@example.com`).
+* `FIRST_SUPERUSER_PASSWORD`: The password of the first superuser; generated, persisted, and logged once when unset. If you generate your own, use `openssl rand -hex 32`.
+* `DATABASE_URL`: Where the SQLite database file lives. Accepts a `sqlite:///...` SQLAlchemy URL or a bare file path; the Docker image defaults to `/data/app.db`.
 * `FRONTEND_HOST`: The origin allowed by CORS (e.g. your generated Railway domain).
 * `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAILS_FROM_EMAIL`: Enable transactional emails with your SMTP provider.
 * `SENTRY_DSN`: Enable Sentry error tracking.
